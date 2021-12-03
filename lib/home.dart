@@ -5,10 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_swiper/flutter_swiper.dart';
 import 'package:navidad_bogota/HomeController.dart';
 import 'package:get/get.dart';
+import 'package:navidad_bogota/alumbrados.dart';
 import 'package:navidad_bogota/cardList.dart';
 import 'package:navidad_bogota/cardListBottom.dart';
+import 'package:navidad_bogota/rutas.dart';
+import 'package:rflutter_alert/rflutter_alert.dart';
 import 'package:share/share.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
+import 'package:toast/toast.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:date_picker_timeline/date_picker_timeline.dart';
 
@@ -25,6 +30,16 @@ class Home extends StatelessWidget {
     }
   }
 
+  findPoints(item, arrayPoint) {
+    for (var i = 0; i < arrayPoint.length; i++) {
+      if (item["fecha"] == arrayPoint[i]["date"] &&
+          item["name"] == arrayPoint[i]["name"]) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     double height = MediaQuery.of(context).size.height;
@@ -35,40 +50,73 @@ class Home extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
+            margin: EdgeInsets.only(bottom: 10),
+            child: Obx(() => FloatingActionButton(
+                  heroTag: "btn1",
+                  backgroundColor: Color(0xfff8ac23),
+                  onPressed: () {
+                    controllerHome.controllerPanel.value.close();
 
-            child:  Obx(()=>FloatingActionButton(
-              backgroundColor: Color(0xfff8ac23),
-
-              onPressed: () {
-                controllerHome.isCalendarShow.value =
-                !controllerHome.isCalendarShow.value;
-                controllerHome.dateTime.value=  DateTime.now();
-                controllerHome.filterButton.value="Todos";
-
-
-              },
-              child: Container(
-                margin: EdgeInsets.only(top: 7),
-                width: 38,
-                child: Stack(
-                  children: [
-                    Align(
-                      child: Container(
-                        child: Text(
-                          "${controllerHome.dateTime.value.day}",
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => Alumbrados()),
+                    );
+                  },
+                  child: Container(
+                    width: 55,
+                    child: Stack(
+                      children: [
+                        Align(
+                          child: Container(
+                            child: Text(
+                              "${controllerHome.dateTime.value.day}",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16),
+                            ),
+                          ),
+                          alignment: Alignment.center,
                         ),
-                       ),
-                      alignment: Alignment.center,
+                        Image.asset("assets/bola.png"),
+                      ],
                     ),
-                    Image.asset("assets/lococalendar.png"),
-                  ],
-                ),
-              ),
-            )),
+                  ),
+                )),
+          ),
+          Container(
+            child: Obx(() => FloatingActionButton(
+                  heroTag: "btn2",
+                  backgroundColor: Color(0xfff8ac23),
+                  onPressed: () {
+                    controllerHome.isCalendarShow.value =
+                        !controllerHome.isCalendarShow.value;
+                    controllerHome.dateTime.value = DateTime.now();
+                    controllerHome.filterButton.value = "Todos";
+                    controllerHome.controllerPanel.value.close();
+                  },
+                  child: Container(
+                    margin: EdgeInsets.only(top: 7),
+                    width: 38,
+                    child: Stack(
+                      children: [
+                        Align(
+                          child: Container(
+                            child: Text(
+                              "${controllerHome.dateTime.value.day}",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16),
+                            ),
+                          ),
+                          alignment: Alignment.center,
+                        ),
+                        Image.asset("assets/lococalendar.png"),
+                      ],
+                    ),
+                  ),
+                )),
           )
         ],
       ),
@@ -144,7 +192,6 @@ class Home extends StatelessWidget {
               }
 
               return SingleChildScrollView(
-
                 child: Container(
                   child: controllerHome.simpleEvento.value != 999
                       ? Column(
@@ -155,8 +202,118 @@ class Home extends StatelessWidget {
                                   controllerHome.simpleEvento.value),
                             ),
                             Container(
+                              margin: EdgeInsets.only(top: 10),
+                              child: RaisedButton(
+                                onPressed: () async {
+                                  List<Widget> rutasButton = [];
+
+                                  for (var i = 0;
+                                      i < controllerHome.rutasApp.length;
+                                      i++) {
+                                    rutasButton.add(RaisedButton(
+                                      onPressed: () async {
+                                        var checkIfExist = findPoints(
+                                            item,
+                                            controllerHome.rutasApp[i]
+                                                ["puntos"]);
+                                        if (!checkIfExist) {
+                                          controllerHome.rutasApp[i]["puntos"]
+                                              .add({
+                                            "name": item["name"],
+                                            "address": item["addressComplete"],
+                                            "date": item["fecha"],
+                                            "localidad": item["card__localidad_2"]
+
+                                          });
+                                          SharedPreferences prefs =
+                                              await SharedPreferences
+                                                  .getInstance();
+
+                                          prefs.setString(
+                                              "rutas",
+                                              jsonEncode(
+                                                  controllerHome.rutasApp));
+
+                                          Toast.show(
+                                              "Evento agregado correctamente",
+                                              context,
+                                              duration: Toast.LENGTH_LONG,
+                                              gravity: Toast.BOTTOM,
+                                              backgroundColor:
+                                                  Colors.greenAccent,
+                                              textColor: Colors.black87);
+                                        } else {
+                                          Toast.show(
+                                              "Evento agregado previamente",
+                                              context,
+                                              duration: Toast.LENGTH_LONG,
+                                              gravity: Toast.BOTTOM,
+                                              backgroundColor:
+                                                  Colors.redAccent);
+                                        }
+
+                                        Navigator.pop(context);
+                                      },
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Expanded(
+                                              child: Text(
+                                            "${controllerHome.rutasApp[i]["name"]} +",
+                                            style: TextStyle(fontSize: 20),
+                                            textAlign: TextAlign.center,
+                                          )),
+                                        ],
+                                      ),
+                                    ));
+                                  }
+
+                                  Alert(
+                                    style: AlertStyle(
+                                        backgroundColor: Color(0xff202834),
+                                        titleStyle:
+                                            TextStyle(color: Colors.white),
+                                        descStyle:
+                                            TextStyle(color: Colors.white)),
+                                    context: context,
+                                    type: AlertType.none,
+                                    title: "Mis rutas",
+                                    content: Container(
+                                      margin: EdgeInsets.only(top: 10),
+                                      child: Column(
+                                        children: rutasButton,
+                                      ),
+                                    ),
+                                    buttons: [
+                                      DialogButton(
+                                        child: Text(
+                                          "Crear una ruta",
+                                          style: TextStyle(
+                                              color: Colors.black,
+                                              fontSize: 20),
+                                        ),
+                                        onPressed: () {
+                                           Get.to(() => Rutas());
+                                        },
+                                        color: Colors.white,
+                                      )
+                                    ],
+                                  ).show();
+                                },
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      "Agregar a mi ruta +",
+                                      style: TextStyle(fontSize: 20),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Container(
                               margin:
-                                  EdgeInsets.only(top: 20, left: 20, right: 20),
+                                  EdgeInsets.only(top: 10, left: 20, right: 20),
                               child: Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
@@ -224,55 +381,71 @@ class Home extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.start,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Container(
-                                margin: EdgeInsets.only(top: 10),
-                                width: 100,
-                                child: Image.asset("assets/logobogotas.png"),
-                              )
-                            ],
+                          Container(
+
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Container(
+                                  margin: EdgeInsets.only(top: 10),
+                                  width: 100,
+                                  child: Image.asset("assets/logobogotas.png"),
+                                ),
+                                Container(
+                                  margin: EdgeInsets.only(top: 15),
+
+                                  child: RaisedButton(onPressed: (){
+                                    Get.to(() => Rutas());
+                                  },child: Text("Mis Rutas"),
+                                  color: Colors.white,),
+                                )
+                              ],
+                            ),
+                            padding: EdgeInsets.only(left: 20,right: 20),
                           ),
                           Container(
                             margin: EdgeInsets.only(bottom: 10),
                             child: Row(
                               children: [
-                                Obx(()=>Text(
-                                  !controllerHome.isCalendarShow.value ? "Eventos Principales" : "Eventos del mes",
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 30),
-                                )),
-
+                                Obx(() => Text(
+                                      !controllerHome.isCalendarShow.value
+                                          ? "Eventos Principales"
+                                          : "Eventos del mes",
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 30),
+                                    )),
                               ],
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             ),
                             padding: EdgeInsets.only(
                                 left: 20, right: 20, bottom: 20, top: 20),
                           ),
-                          Obx(()=>!controllerHome.isCalendarShow.value ? Container(
-                            child: Obx(() => Swiper(
-                              itemBuilder:
-                                  (BuildContext context, int indexd) {
-                                return Container(
-                                    padding:
-                                    EdgeInsets.only(left: 5, right: 5),
-                                    child: CardList(
-                                        controllerHome
-                                            .jsonEventsPrincipal[indexd],
-                                        height,
-                                        indexd));
-                              },
-                              itemCount:
-                              controllerHome.jsonEventsPrincipal.length,
-                              viewportFraction: 0.8,
-                              scale: 0.9,
-                            )),
-                            padding: EdgeInsets.only(bottom: 30),
-                            height: (height * 50) / 100,
-                          ): Container()),
+                          Obx(() => !controllerHome.isCalendarShow.value
+                              ? Container(
+                                  child: Obx(() => Swiper(
+                                        itemBuilder:
+                                            (BuildContext context, int indexd) {
+                                          return Container(
+                                              padding: EdgeInsets.only(
+                                                  left: 5, right: 5),
+                                              child: CardList(
+                                                  controllerHome
+                                                          .jsonEventsPrincipal[
+                                                      indexd],
+                                                  height,
+                                                  indexd));
+                                        },
+                                        itemCount: controllerHome
+                                            .jsonEventsPrincipal.length,
+                                        viewportFraction: 0.8,
+                                        scale: 0.9,
+                                      )),
+                                  padding: EdgeInsets.only(bottom: 30),
+                                  height: (height * 50) / 100,
+                                )
+                              : Container()),
                           Container(
                             margin: EdgeInsets.only(bottom: 30),
                             height: 50.0,
@@ -286,7 +459,8 @@ class Home extends StatelessWidget {
                                       Container(
                                 child: RaisedButton(
                                   onPressed: () {
-                                    controllerHome.filterButton.value=controllerHome.placesFilter[indexdf];
+                                    controllerHome.filterButton.value =
+                                        controllerHome.placesFilter[indexdf];
                                     controllerHome.filterEvents();
                                   },
                                   child: Text(
@@ -313,7 +487,7 @@ class Home extends StatelessWidget {
                                             DatePicker(
                                               DateTime.now(),
                                               initialSelectedDate:
-                                              controllerHome.dateTime.value,
+                                                  controllerHome.dateTime.value,
                                               selectionColor: Color(0xfff8ac23),
                                               deactivatedColor: Colors.white,
                                               locale: "es_ES",
@@ -326,7 +500,8 @@ class Home extends StatelessWidget {
                                                   color: Colors.white),
                                               selectedTextColor: Colors.white,
                                               onDateChange: (date) {
-                                                controllerHome.dateTime.value=date;
+                                                controllerHome.dateTime.value =
+                                                    date;
                                                 controllerHome.filterEvents();
                                               },
                                             ),
@@ -336,22 +511,25 @@ class Home extends StatelessWidget {
                                       )
                                     : Container(),
                               )),
-                          Obx(()=>Container(
-                            padding: EdgeInsets.only(left: 20,right: 20),
-
-                            child:controllerHome.allEventsSize.value==0 ? Container(
-
-                              child: Row(
-
-                                children: [
-                                  Expanded(child: Text("No hay eventos en ${controllerHome.filterButton.value} para este dia.. pero puedes ver estos otros",textAlign: TextAlign.center,)),
-                                ],
-                                mainAxisAlignment: MainAxisAlignment.center,
-                              ),
-                              margin: EdgeInsets.only(bottom: 20),
-                            ): Container(),
-                          )),
-
+                          Obx(() => Container(
+                                padding: EdgeInsets.only(left: 20, right: 20),
+                                child: controllerHome.allEventsSize.value == 0
+                                    ? Container(
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                                child: Text(
+                                              "No hay eventos en ${controllerHome.filterButton.value} para este dia.. pero puedes ver estos otros",
+                                              textAlign: TextAlign.center,
+                                            )),
+                                          ],
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                        ),
+                                        margin: EdgeInsets.only(bottom: 20),
+                                      )
+                                    : Container(),
+                              )),
                           Container(
                             padding:
                                 EdgeInsets.only(left: 20, right: 20, top: 0),

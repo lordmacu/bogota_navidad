@@ -32,6 +32,9 @@ dependencies:
   share: 0.6.5+4
   date_picker_timeline: 1.2.1
   flutter_native_splash: 0.3.2
+  shared_preferences: 0.5.12+4
+  rflutter_alert: 1.1.0
+  toast: 0.1.5
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -62,10 +65,13 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/events_general.json
+    - assets/alumbrados.json
     - assets/events_principal.json
     - assets/logobogota.png
     - assets/logobogotas.png
     - assets/lococalendar.png
+    - assets/bola.png
+    - assets/navidad.jpg
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

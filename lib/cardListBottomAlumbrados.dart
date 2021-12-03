@@ -1,23 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:navidad_bogota/AlumbradosController.dart';
 import 'package:navidad_bogota/HomeController.dart';
 
-class CardListBottom extends StatelessWidget{
-  final HomeController controllerHome = Get.find();
+class CardListBottomAlumbrados extends StatelessWidget{
+  final AlumbradosController controllerAlumbrados = Get.find();
 
   var item;
   var height;
   var index;
 
-  CardListBottom(this.item,this.height,this.index);
+  CardListBottomAlumbrados(this.item,this.height,this.index);
   @override
   Widget build(BuildContext context) {
 
     return GestureDetector(
       onTap: (){
-        controllerHome.simpleEvento.value=index;
-        controllerHome.controllerPanel.value.open();
-        controllerHome.simpleEventoType.value=2;
+        controllerAlumbrados.simpleEvento.value=index;
+        controllerAlumbrados.controllerPanel.value.open();
+        controllerAlumbrados.simpleEventoType.value=2;
 
       },
       child:  Container(
@@ -110,10 +111,14 @@ class CardListBottom extends StatelessWidget{
                       ),
                       margin: EdgeInsets.only(bottom: 5),
                     ),
-                    Text("${item["name"]}",style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold
-                    ),),
+                    Row(
+                      children: [
+                        Expanded(child: Text("${item["name"]}",style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold
+                        ),))
+                      ],
+                    ),
 
                   ],
                   mainAxisSize: MainAxisSize.min,

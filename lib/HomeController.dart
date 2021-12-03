@@ -10,6 +10,8 @@ import 'package:flutter/services.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 class HomeController extends GetxController {
   var jsonEvents = [].obs;
   var jsonEventsPrincipal = [].obs;
@@ -21,12 +23,12 @@ class HomeController extends GetxController {
   var allEventsSize = 0.obs;
   var filterButton = "Todos".obs;
 
-  var contollerScroll= ScrollController().obs;
+  var contollerScroll = ScrollController().obs;
 
-  var isCalendarShow=false.obs;
+  var isCalendarShow = false.obs;
   var controllerPanel = PanelController().obs;
-  var dateTime= DateTime(2021).obs;
-
+  var dateTime = DateTime(2021).obs;
+  var rutasApp = [].obs;
 
   loadjsonData() async {
     final String response =
@@ -38,19 +40,17 @@ class HomeController extends GetxController {
     placesFilterLocal.add("Todos");
 
     for (var i = 0; i < jsonResult.length; i++) {
+      var fechaSimple = jsonResult[i]["fecha"].split(", ");
+      var dateFormated = fechaSimple[1]
+          .replaceAll("de", "")
+          .replaceAll("  ", " ")
+          .replaceAll("diciembre", "12");
 
-
-      var fechaSimple=jsonResult[i]["fecha"].split(", ");
-      var dateFormated=fechaSimple[1].replaceAll("de","").replaceAll("  "," ").replaceAll("diciembre","12");
-
-
-      var dateTime3 = DateFormat('dd MM yyyy', 'es_ES').parse("${dateFormated} 2021");
-      jsonResult[i]["fechaFormated"]=dateTime3;
-
+      var dateTime3 =
+          DateFormat('dd MM yyyy', 'es_ES').parse("${dateFormated} 2021");
+      jsonResult[i]["fechaFormated"] = dateTime3;
 
       placesFilterLocal.add(jsonResult[i]["card__localidad_2"]);
-
-
     }
     placesFilter.assignAll(placesFilterLocal.toSet().toList());
 
@@ -58,62 +58,65 @@ class HomeController extends GetxController {
     jsonEventsTemp.assignAll(jsonResult);
   }
 
-  filterEvents( ) {
-
-
-    if(filterButton.value!="Todos"){
-
+  filterEvents() {
+    if (filterButton.value != "Todos") {
       var jsonEventsLocal = [];
       for (var i = 0; i < jsonEventsTemp.length; i++) {
         if (jsonEventsTemp[i]["card__localidad_2"] == filterButton.value) {
-          if(dateTime.value.difference(jsonEventsTemp[i]["fechaFormated"]).inDays == 0){
-             jsonEventsLocal.add(jsonEventsTemp[i]);
+          if (dateTime.value
+                  .difference(jsonEventsTemp[i]["fechaFormated"])
+                  .inDays ==
+              0) {
+            jsonEventsLocal.add(jsonEventsTemp[i]);
           }
         }
       }
 
-      allEventsSize.value=jsonEventsLocal.length;
+      allEventsSize.value = jsonEventsLocal.length;
 
-      if(jsonEventsLocal.length==0){
-
+      if (jsonEventsLocal.length == 0) {
         for (var i = 0; i < jsonEventsTemp.length; i++) {
           if (jsonEventsTemp[i]["card__localidad_2"] == filterButton.value) {
-
-            if(dateTime.value.difference(jsonEventsTemp[i]["fechaFormated"]).inDays < 0){
+            if (dateTime.value
+                    .difference(jsonEventsTemp[i]["fechaFormated"])
+                    .inDays <
+                0) {
               jsonEventsLocal.add(jsonEventsTemp[i]);
             }
           }
         }
-
       }
 
       jsonEvents.assignAll(jsonEventsLocal);
-
-    }else{
+    } else {
       var jsonEventsLocal = [];
 
       for (var i = 0; i < jsonEventsTemp.length; i++) {
-          if(dateTime.value.difference(jsonEventsTemp[i]["fechaFormated"]).inDays == 0){
-            jsonEventsLocal.add(jsonEventsTemp[i]);
-          }
+        if (dateTime.value
+                .difference(jsonEventsTemp[i]["fechaFormated"])
+                .inDays ==
+            0) {
+          jsonEventsLocal.add(jsonEventsTemp[i]);
+        }
       }
 
-      allEventsSize.value=jsonEventsLocal.length;
+      allEventsSize.value = jsonEventsLocal.length;
 
-      if(jsonEventsLocal.length==0){
+      if (jsonEventsLocal.length == 0) {
         for (var i = 0; i < jsonEventsTemp.length; i++) {
-          if(dateTime.value.difference(jsonEventsTemp[i]["fechaFormated"]).inDays > 0){
+          if (dateTime.value
+                  .difference(jsonEventsTemp[i]["fechaFormated"])
+                  .inDays >
+              0) {
             jsonEventsLocal.add(jsonEventsTemp[i]);
           }
         }
 
         jsonEvents.assignAll(jsonEventsTemp);
-      }else{
+      } else {
         jsonEvents.assignAll(jsonEventsLocal);
       }
-
     }
-
   }
 
   loadjsonDataPrincipal() async {
@@ -125,13 +128,15 @@ class HomeController extends GetxController {
     var jsonResult = json.decode(response);
 
     for (var i = 0; i < jsonResult.length; i++) {
-      var fechaSimple=jsonResult[i]["fecha"].split(", ");
-      var dateFormated=fechaSimple[1].replaceAll("de","").replaceAll("  "," ").replaceAll("diciembre","12");
+      var fechaSimple = jsonResult[i]["fecha"].split(", ");
+      var dateFormated = fechaSimple[1]
+          .replaceAll("de", "")
+          .replaceAll("  ", " ")
+          .replaceAll("diciembre", "12");
 
-
-      var dateTime3 = DateFormat('dd MM yyyy', 'es_ES').parse("${dateFormated} 2021");
-      jsonResult[i]["fechaFormated"]=dateTime3;
-
+      var dateTime3 =
+          DateFormat('dd MM yyyy', 'es_ES').parse("${dateFormated} 2021");
+      jsonResult[i]["fechaFormated"] = dateTime3;
     }
 
     print(jsonResult);
@@ -139,11 +144,28 @@ class HomeController extends GetxController {
     jsonEventsPrincipal.assignAll(jsonResult);
   }
 
+  setPrincipalRuta() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+  //  prefs.setString("rutas", null);
+
+
+    if (prefs.getString("rutas") == null) {
+      var rutas = [
+        {"name": "Ruta de la navidad", "puntos": []}
+      ];
+
+      prefs.setString("rutas", jsonEncode(rutas));
+    }
+    var rutasObject=jsonDecode(prefs.getString("rutas"));
+    rutasApp.assignAll(rutasObject);
+  }
+
   @override
   void onInit() {
-    dateTime.value=  DateTime.now();
+    dateTime.value = DateTime.now();
     super.onInit();
 
+    setPrincipalRuta();
     loadjsonData();
     loadjsonDataPrincipal();
   }
